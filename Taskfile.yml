@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the operator binary
+    cmds:
+      - mkdir -p bin
+      - go build -o bin/operator ./cmd/operator/
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test ./...
+
+  run:
+    desc: Run operator locally (requires kubeconfig)
+    cmds:
+      - go run ./cmd/operator/
+
+  docker-build:
+    desc: Build Docker image
+    vars:
+      TAG: '{{.TAG | default "latest"}}'
+    cmds:
+      - docker build -t klarity:{{.TAG}} .
+
+  deploy-local:
+    desc: Deploy to local k3d cluster
+    cmds:
+      - kubectl apply -f config/rbac/
+      - kubectl apply -f config/crd/
+
+  codegen:
+    desc: Regenerate CRDs and deepcopy via controller-gen
+    cmds:
+      - ./hack/update-codegen.sh
+
+  logs:
+    desc: Tail operator logs
+    cmds:
+      - kubectl logs -n klarity-system -l app=klarity -f
+
+  oom-test:
+    desc: Deploy OOMKill test pod
+    cmds:
+      - kubectl apply -f examples/oomkill-test.yaml
