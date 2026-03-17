@@ -2,7 +2,10 @@ module github.com/KshitijPatil98/klarity
 
 go 1.25.0
 
-require sigs.k8s.io/controller-runtime v0.23.3
+require (
+	k8s.io/apimachinery v0.35.0
+	sigs.k8s.io/controller-runtime v0.23.3
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -52,7 +55,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.35.0 // indirect
 	k8s.io/apiextensions-apiserver v0.35.0 // indirect
-	k8s.io/apimachinery v0.35.0 // indirect
 	k8s.io/client-go v0.35.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
