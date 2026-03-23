@@ -7,6 +7,11 @@ tasks:
       - mkdir -p bin
       - go build -o bin/operator ./cmd/operator/
 
+  compile:
+    desc: Check all packages compile without errors
+    cmds:
+      - go build ./...
+
   test:
     desc: Run unit tests
     cmds:
@@ -27,8 +32,7 @@ tasks:
   deploy-local:
     desc: Deploy to local k3d cluster
     cmds:
-      - kubectl apply -f config/rbac/
-      - kubectl apply -f config/crd/
+      - kubectl apply -f config/crd/bases/
 
   codegen:
     desc: Regenerate CRDs and deepcopy via controller-gen

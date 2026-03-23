@@ -1,0 +1,188 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: klaritymonitors.klarity.io
+spec:
+  group: klarity.io
+  names:
+    kind: KlarityMonitor
+    listKind: KlarityMonitorList
+    plural: klaritymonitors
+    singular: klaritymonitor
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.watchedPods
+      name: WatchedPods
+      type: integer
+    - jsonPath: .status.diagnosesCreated
+      name: DiagnosesCreated
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          KlarityMonitor configures which namespaces and pods the Klarity operator watches
+          for failures, and how those failures are classified and diagnosed. Each Monitor
+          is namespace-scoped, allowing teams to own their own failure detection policy
+          without cluster-admin access.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KlarityMonitorSpec defines the desired state of KlarityMonitor.
+            properties:
+              cooldownOverride:
+                description: |-
+                  CooldownOverride overrides the globalCooldown set in KlarityConfig for this
+                  specific Monitor. Accepts standard Go duration strings (e.g. "5m", "30m").
+                  Minimum "5m". If unset, KlarityConfig.spec.globalCooldown applies.
+                type: string
+                x-kubernetes-validations:
+                - message: cooldownOverride must be at least 5m
+                  rule: duration(self) >= duration('5m')
+              enabled:
+                default: true
+                description: |-
+                  Enabled is a kill switch for this Monitor. When set to false, the operator
+                  stops watching the target namespaces for this Monitor and its phase transitions
+                  to Paused. Existing KlarityDiagnosis CRs are not deleted. Defaults to true.
+                type: boolean
+              failureTypes:
+                description: |-
+                  FailureTypes lists the Kubernetes-level failure symptoms this Monitor detects.
+                  At least one value is required. Recognised values today are "OOMKill" and
+                  "CrashLoopBackOff". These are detection triggers (observable symptoms), not
+                  root causes. Unknown values are rejected by controller logic at reconcile time,
+                  not at admission, to keep the type extensible without requiring a CRD upgrade.
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              selector:
+                description: |-
+                  Selector filters which pods this Monitor watches within the target namespaces.
+                  Uses standard Kubernetes label selector semantics. If omitted, all pods in
+                  the target namespaces are eligible for failure detection.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              severity:
+                default: warning
+                description: |-
+                  Severity tags all KlarityDiagnosis CRs created by this Monitor, allowing
+                  operators to route or filter diagnoses by urgency. One of "critical",
+                  "warning", or "info". Defaults to "warning".
+                enum:
+                - critical
+                - warning
+                - info
+                type: string
+              targetNamespaces:
+                description: |-
+                  TargetNamespaces is the list of namespaces this Monitor watches for failures.
+                  If empty, the Monitor watches only the namespace it lives in — not the
+                  "default" namespace, but the Monitor's own namespace.
+                items:
+                  type: string
+                type: array
+            required:
+            - failureTypes
+            type: object
+          status:
+            description: KlarityMonitorStatus reflects the observed state of KlarityMonitor.
+            properties:
+              diagnosesCreated:
+                description: |-
+                  DiagnosesCreated is the total number of KlarityDiagnosis CRs created by this
+                  Monitor since it was first applied. Monotonically increasing.
+                type: integer
+              lastFailureDetected:
+                description: |-
+                  LastFailureDetected is the RFC3339 timestamp of the most recent failure event
+                  detected by this Monitor. Empty if no failure has been detected yet.
+                type: string
+              phase:
+                description: |-
+                  Phase is the current lifecycle phase of this Monitor.
+                    - Active:  the operator is reconciled and actively watching for failures.
+                    - Paused:  spec.enabled is false; no failure detection is occurring.
+                    - Error:   the operator encountered a configuration or runtime error;
+                               see operator logs for details.
+                type: string
+              watchedPods:
+                description: |-
+                  WatchedPods is the count of pods currently matched by this Monitor's selector
+                  across all target namespaces. Updated each reconcile cycle.
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
