@@ -52,6 +52,7 @@ type AIConfig struct {
 	// Model is the model identifier to use (e.g. "claude-opus-4-6").
 	//
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	Model string `json:"model"`
 
 	// APIKeySecretRef references a Secret in the klarity-system namespace that
@@ -69,11 +70,13 @@ type SecretKeyRef struct {
 	// Name is the name of the Secret.
 	//
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// Key is the key within the Secret whose value is the API key.
 	//
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	Key string `json:"key"`
 }
 
@@ -106,7 +109,8 @@ type KlarityConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KlarityConfigSpec   `json:"spec,omitempty"`
+	// +kubebuilder:validation:Required
+	Spec   KlarityConfigSpec   `json:"spec"`
 	Status KlarityConfigStatus `json:"status,omitempty"`
 }
 

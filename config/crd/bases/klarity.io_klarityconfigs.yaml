@@ -64,9 +64,11 @@ spec:
                       key:
                         description: Key is the key within the Secret whose value
                           is the API key.
+                        minLength: 1
                         type: string
                       name:
                         description: Name is the name of the Secret.
+                        minLength: 1
                         type: string
                     required:
                     - key
@@ -74,6 +76,7 @@ spec:
                     type: object
                   model:
                     description: Model is the model identifier to use (e.g. "claude-opus-4-6").
+                    minLength: 1
                     type: string
                   provider:
                     description: Provider is the AI backend to use. Currently only
@@ -142,6 +145,8 @@ spec:
                   (e.g. AI API reachability check).
                 type: string
             type: object
+        required:
+        - spec
         type: object
         x-kubernetes-validations:
         - message: KlarityConfig must be named 'klarity'

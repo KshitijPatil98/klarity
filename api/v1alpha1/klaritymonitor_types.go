@@ -21,6 +21,7 @@ type KlarityMonitorSpec struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:items:MinLength=1
 	FailureTypes []string `json:"failureTypes"`
 
 	// Selector filters which pods this Monitor watches within the target namespaces.
@@ -92,7 +93,8 @@ type KlarityMonitor struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KlarityMonitorSpec   `json:"spec,omitempty"`
+	// +kubebuilder:validation:Required
+	Spec   KlarityMonitorSpec   `json:"spec"`
 	Status KlarityMonitorStatus `json:"status,omitempty"`
 }
 
