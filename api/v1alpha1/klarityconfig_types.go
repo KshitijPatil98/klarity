@@ -10,13 +10,6 @@ type KlarityConfigSpec struct {
 	// +kubebuilder:validation:Required
 	AI AIConfig `json:"ai"`
 
-	// GlobalCooldown is the minimum time between diagnoses for the same pod.
-	// Accepts standard Go duration strings (e.g. "10m", "1h"). Minimum "5m".
-	//
-	// +kubebuilder:default="10m"
-	// +kubebuilder:validation:XValidation:rule="duration(self) >= duration('5m')",message="globalCooldown must be at least 5m"
-	GlobalCooldown string `json:"globalCooldown,omitempty"`
-
 	// DiagnosisRetention controls how long completed KlarityDiagnosis CRs are kept
 	// before the operator deletes them. Accepts standard Go duration strings (e.g. "72h").
 	// Minimum "1h".

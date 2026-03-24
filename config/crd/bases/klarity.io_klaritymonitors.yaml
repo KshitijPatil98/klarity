@@ -56,15 +56,6 @@ spec:
           spec:
             description: KlarityMonitorSpec defines the desired state of KlarityMonitor.
             properties:
-              cooldownOverride:
-                description: |-
-                  CooldownOverride overrides the globalCooldown set in KlarityConfig for this
-                  specific Monitor. Accepts standard Go duration strings (e.g. "5m", "30m").
-                  Minimum "5m". If unset, KlarityConfig.spec.globalCooldown applies.
-                type: string
-                x-kubernetes-validations:
-                - message: cooldownOverride must be at least 5m
-                  rule: duration(self) >= duration('5m')
               enabled:
                 default: true
                 description: |-

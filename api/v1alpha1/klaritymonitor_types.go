@@ -31,14 +31,6 @@ type KlarityMonitorSpec struct {
 	// +kubebuilder:validation:Optional
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 
-	// CooldownOverride overrides the globalCooldown set in KlarityConfig for this
-	// specific Monitor. Accepts standard Go duration strings (e.g. "5m", "30m").
-	// Minimum "5m". If unset, KlarityConfig.spec.globalCooldown applies.
-	//
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:XValidation:rule="duration(self) >= duration('5m')",message="cooldownOverride must be at least 5m"
-	CooldownOverride string `json:"cooldownOverride,omitempty"`
-
 	// Severity tags all KlarityDiagnosis CRs created by this Monitor, allowing
 	// operators to route or filter diagnoses by urgency. One of "critical",
 	// "warning", or "info". Defaults to "warning".

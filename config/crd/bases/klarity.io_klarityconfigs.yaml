@@ -106,15 +106,6 @@ spec:
                 x-kubernetes-validations:
                 - message: diagnosisRetention must be at least 1h
                   rule: duration(self) >= duration('1h')
-              globalCooldown:
-                default: 10m
-                description: |-
-                  GlobalCooldown is the minimum time between diagnoses for the same pod.
-                  Accepts standard Go duration strings (e.g. "10m", "1h"). Minimum "5m".
-                type: string
-                x-kubernetes-validations:
-                - message: globalCooldown must be at least 5m
-                  rule: duration(self) >= duration('5m')
               maxConcurrentDiagnoses:
                 default: 5
                 description: |-

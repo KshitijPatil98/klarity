@@ -1,0 +1,358 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: klaritydiagnoses.klarity.io
+spec:
+  group: klarity.io
+  names:
+    kind: KlarityDiagnosis
+    listKind: KlarityDiagnosisList
+    plural: klaritydiagnoses
+    singular: klaritydiagnosis
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.failureType
+      name: FailureType
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.diagnosis.category
+      name: Category
+      type: string
+    - jsonPath: .status.diagnosis.confidence
+      name: Confidence
+      type: number
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          KlarityDiagnosis is created automatically by the Klarity operator when it detects a
+          pod failure matching a KlarityMonitor's failureTypes. It is never created manually.
+          The spec captures the immutable failure snapshot; the status tracks lifecycle and
+          holds the AI diagnosis output.
+
+          Re-diagnosis can be triggered by setting the klarity.io/retry annotation to "true".
+          The operator resets the phase to Pending, increments retryCount, clears the previous
+          diagnosis, re-runs the full pipeline, and resets the annotation to "false" when done.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              KlarityDiagnosisSpec captures the immutable snapshot of a detected pod failure.
+              All fields are set by the operator at creation time and never updated thereafter.
+            properties:
+              containerName:
+                description: ContainerName is the name of the specific container within
+                  the pod that failed.
+                minLength: 1
+                type: string
+              context:
+                description: Context is a snapshot of runtime context gathered at
+                  detection time.
+                properties:
+                  exitCode:
+                    description: ExitCode is the container exit code at time of failure,
+                      e.g. 137 for OOMKill.
+                    type: integer
+                  resources:
+                    description: Resources holds the pod resource requests and limits
+                      at time of failure.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Limits maps resource names to their limit quantities,
+                          e.g. {"cpu": "500m", "memory": "512Mi"}.
+                        type: object
+                      requests:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Requests maps resource names to their requested quantities,
+                          e.g. {"cpu": "250m", "memory": "256Mi"}.
+                        type: object
+                    type: object
+                  restartCount:
+                    description: RestartCount is the container restart count at time
+                      of failure.
+                    type: integer
+                  sources:
+                    description: |-
+                      Sources is a flexible list of collector outputs gathered during the Gathering
+                      phase. Each entry names a collector (e.g. "logs", "events", "topology",
+                      "metrics") and holds its output as text. The list is intentionally unstructured
+                      — new collectors add new entries without any schema change.
+                    items:
+                      description: ContextSource is a single collector output captured
+                        during the Gathering phase.
+                      properties:
+                        data:
+                          description: Data is the collector output as plain text.
+                          type: string
+                        name:
+                          description: Name identifies the collector, e.g. "logs",
+                            "events", "topology", "metrics".
+                          minLength: 1
+                          type: string
+                      required:
+                      - data
+                      - name
+                      type: object
+                    type: array
+                required:
+                - exitCode
+                - restartCount
+                type: object
+              detectedAt:
+                description: DetectedAt is the RFC3339 timestamp of when the operator
+                  detected the failure event.
+                minLength: 1
+                type: string
+              failureType:
+                description: |-
+                  FailureType is the Kubernetes-level failure symptom detected, e.g. "OOMKill"
+                  or "CrashLoopBackOff". This is the authoritative source of truth; the
+                  klarity.io/failure-type label is a queryable projection of this field.
+                minLength: 1
+                type: string
+              monitorRef:
+                description: |-
+                  MonitorRef is the authoritative reference to the KlarityMonitor that triggered
+                  this Diagnosis. The klarity.io/monitor and klarity.io/monitor-namespace labels
+                  are queryable projections of this field.
+                properties:
+                  name:
+                    description: Name is the name of the KlarityMonitor.
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace where the KlarityMonitor
+                      lives.
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              namespace:
+                description: |-
+                  Namespace is the namespace of the failing pod. This is also the namespace
+                  the KlarityDiagnosis CR lives in.
+                minLength: 1
+                type: string
+              nodeName:
+                description: NodeName is the node the pod was scheduled on at time
+                  of failure.
+                minLength: 1
+                type: string
+              ownerRef:
+                description: |-
+                  OwnerRef is the immediate workload owner of the pod, resolved by the operator
+                  at detection time. For standalone pods with no owner, Kind is "Pod" and Name
+                  is the pod name.
+                properties:
+                  kind:
+                    description: |-
+                      Kind is the workload kind, e.g. "Deployment", "StatefulSet", "DaemonSet", "Job".
+                      For standalone pods, Kind is "Pod".
+                    minLength: 1
+                    type: string
+                  name:
+                    description: |-
+                      Name is the workload name, e.g. "payments-api".
+                      For standalone pods, Name is the pod name.
+                    minLength: 1
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              podName:
+                description: PodName is the full name of the failing pod.
+                minLength: 1
+                type: string
+              revisionHash:
+                description: |-
+                  RevisionHash is a version identifier for the pod's workload revision.
+                  The operator populates this from the pod's labels:
+                    - Deployments: pod-template-hash label
+                    - StatefulSets: controller-revision-hash label
+                    - DaemonSets: controller-revision-hash label
+                    - Jobs/CronJobs: empty (each Job is inherently unique)
+                    - Standalone Pods: empty
+                  Used for existence-based deduplication. A new hash means the workload
+                  was updated, which triggers a new Diagnosis even if a previous one
+                  exists for the same workload + container + failure type.
+                  When empty, dedup is based on workload + container + failure type only.
+                type: string
+            required:
+            - containerName
+            - context
+            - detectedAt
+            - failureType
+            - monitorRef
+            - namespace
+            - nodeName
+            - ownerRef
+            - podName
+            type: object
+          status:
+            description: KlarityDiagnosisStatus reflects the observed state of a KlarityDiagnosis.
+            properties:
+              diagnosedAt:
+                description: |-
+                  DiagnosedAt is the RFC3339 timestamp of when the AI diagnosis completed.
+                  Empty until the Diagnosed phase is reached.
+                type: string
+              diagnosis:
+                description: Diagnosis is the AI output. Empty until phase reaches
+                  Diagnosed.
+                properties:
+                  affectedResources:
+                    description: |-
+                      AffectedResources lists other Kubernetes resources involved in or contributing
+                      to the failure.
+                    items:
+                      description: AffectedResource identifies a Kubernetes resource
+                        involved in or contributing to a failure.
+                      properties:
+                        kind:
+                          description: Kind is the resource kind, e.g. "Deployment",
+                            "Service", "PVC".
+                          minLength: 1
+                          type: string
+                        name:
+                          description: Name is the resource name.
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace the resource lives
+                            in.
+                          minLength: 1
+                          type: string
+                      required:
+                      - kind
+                      - name
+                      - namespace
+                      type: object
+                    type: array
+                  category:
+                    description: |-
+                      Category classifies the root cause of the failure.
+                        - application:    bug in the app code (memory leak, unhandled exception, etc.)
+                        - infrastructure: cluster or node level issue (node pressure, disk full, etc.)
+                        - configuration:  misconfigured resource limits, env vars, ConfigMaps, etc.
+                        - dependency:     failure caused by another service or resource (db down, PVC stuck, etc.)
+                    enum:
+                    - application
+                    - infrastructure
+                    - configuration
+                    - dependency
+                    type: string
+                  confidence:
+                    description: |-
+                      Confidence is the AI's confidence in the diagnosis, expressed as a value
+                      between 0.0 (no confidence) and 1.0 (certain).
+                    maximum: 1
+                    minimum: 0
+                    type: number
+                  recommendations:
+                    description: Recommendations is an ordered list of recommended
+                      actions to resolve the failure.
+                    items:
+                      description: Recommendation is a single recommended action to
+                        resolve a diagnosed failure.
+                      properties:
+                        action:
+                          description: Action is a human-readable description of what
+                            to do.
+                          minLength: 1
+                          type: string
+                        priority:
+                          description: Priority indicates the urgency of this recommendation.
+                          enum:
+                          - immediate
+                          - short-term
+                          - long-term
+                          type: string
+                        type:
+                          description: Type classifies what kind of change is recommended.
+                          enum:
+                          - resource
+                          - code
+                          - infrastructure
+                          - configuration
+                          type: string
+                      required:
+                      - action
+                      - priority
+                      - type
+                      type: object
+                    type: array
+                  rootCause:
+                    description: RootCause is a detailed multi-line explanation of
+                      why the failure occurred.
+                    type: string
+                  summary:
+                    description: Summary is a one-line description of what happened.
+                    type: string
+                type: object
+              lastError:
+                description: |-
+                  LastError is the error message when phase is Error. Empty otherwise. Recorded
+                  to aid debugging without requiring access to operator logs.
+                type: string
+              phase:
+                description: |-
+                  Phase is the current lifecycle phase of this Diagnosis.
+                    - Pending:    detected, waiting for a processing slot (maxConcurrentDiagnoses).
+                    - Gathering:  collectors are fetching context (logs, events, topology, metrics).
+                    - Diagnosing: context sent to AI, waiting for response.
+                    - Diagnosed:  AI response received and written to status.diagnosis.
+                    - Error:      something failed (AI unavailable, context gathering failed, etc.).
+                enum:
+                - Pending
+                - Gathering
+                - Diagnosing
+                - Diagnosed
+                - Error
+                type: string
+              retryCount:
+                description: |-
+                  RetryCount is the number of times this Diagnosis has been re-attempted via
+                  the klarity.io/retry annotation. Starts at 0 and is incremented each time
+                  the annotation triggers a re-diagnosis.
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
