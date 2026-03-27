@@ -136,7 +136,7 @@ func (r *KlarityConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 
 	status.Active = true
 	status.Message = ""
-	status.LastHealthCheck = time.Now().UTC().Format("2006-01-02 15:04:05 UTC")
+	status.LastHealthCheck = time.Now().UTC().Format(time.RFC3339)
 
 	// 4. Count enabled KlarityMonitor CRs across all namespaces.
 	count, err := r.countEnabledMonitors(ctx)
