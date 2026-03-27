@@ -1,5 +1,11 @@
 version: '3'
 
+vars:
+  GOCACHE: '{{.GOCACHE | default "/tmp/go-build"}}'
+  LOCALBIN: '{{.TASKFILE_DIR}}/bin'
+  ENVTEST_TOOLS_VERSION: '{{.ENVTEST_TOOLS_VERSION | default "release-0.23"}}'
+  ENVTEST_K8S_VERSION: '{{.ENVTEST_K8S_VERSION | default "1.35.x"}}'
+
 tasks:
   build:
     desc: Build the operator binary
@@ -13,9 +19,28 @@ tasks:
       - go build ./...
 
   test:
-    desc: Run unit tests
+    desc: Run all tests (unit + envtest)
+    deps:
+      - test-unit
+      - test-envtest
+
+  test-unit:
+    desc: Run tests that do not require envtest API server binaries
     cmds:
-      - go test ./...
+      - GOCACHE={{.GOCACHE}} go test ./...
+
+  install-envtest:
+    desc: Install setup-envtest tool used to fetch local envtest binaries
+    cmds:
+      - mkdir -p {{.LOCALBIN}}
+      - GOBIN={{.LOCALBIN}} go install sigs.k8s.io/controller-runtime/tools/setup-envtest@{{.ENVTEST_TOOLS_VERSION}}
+
+  test-envtest:
+    desc: Run envtest suites (requires local kube-apiserver/etcd test binaries)
+    deps:
+      - install-envtest
+    cmds:
+      - KUBEBUILDER_ASSETS="$({{.LOCALBIN}}/setup-envtest use {{.ENVTEST_K8S_VERSION}} --bin-dir {{.LOCALBIN}} -p path)" GOCACHE={{.GOCACHE}} go test -tags=envtest ./api/v1alpha1/tests
 
   run:
     desc: Run operator locally (requires kubeconfig)

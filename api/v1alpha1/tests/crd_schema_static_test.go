@@ -1,3 +1,6 @@
+//go:build !envtest
+// +build !envtest
+
 package v1alpha1_test
 
 import (
@@ -8,7 +11,7 @@ import (
 )
 
 func TestKlarityConfigCRDSchemaDoesNotContainGlobalCooldown(t *testing.T) {
-	crdPath := filepath.Join("..", "..", "config", "crd", "bases", "klarity.io_klarityconfigs.yaml")
+	crdPath := filepath.Join("..", "..", "..", "config", "crd", "bases", "klarity.io_klarityconfigs.yaml")
 	data, err := os.ReadFile(crdPath)
 	if err != nil {
 		t.Fatalf("failed reading KlarityConfig CRD: %v", err)
@@ -20,7 +23,7 @@ func TestKlarityConfigCRDSchemaDoesNotContainGlobalCooldown(t *testing.T) {
 }
 
 func TestKlarityMonitorCRDSchemaDoesNotContainCooldownOverride(t *testing.T) {
-	crdPath := filepath.Join("..", "..", "config", "crd", "bases", "klarity.io_klaritymonitors.yaml")
+	crdPath := filepath.Join("..", "..", "..", "config", "crd", "bases", "klarity.io_klaritymonitors.yaml")
 	data, err := os.ReadFile(crdPath)
 	if err != nil {
 		t.Fatalf("failed reading KlarityMonitor CRD: %v", err)

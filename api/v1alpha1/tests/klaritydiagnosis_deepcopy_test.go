@@ -1,3 +1,6 @@
+//go:build !envtest
+// +build !envtest
+
 package v1alpha1_test
 
 import (
